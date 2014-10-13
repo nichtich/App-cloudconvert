@@ -1,0 +1,8 @@
+/App-cloudconvert-*
+/.build
+/_build*
+/Build
+MYMETA.*
+!META.json
+/.prove
+cloudconvert.json

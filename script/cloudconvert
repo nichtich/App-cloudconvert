@@ -4,9 +4,8 @@ use warnings;
 
 use Pod::Usage;
 use Getopt::Long;
-use LWP;
-use HTTP::Request::Common qw(POST);
-use JSON qw(from_json to_json);
+use JSON::PP qw(decode_json);
+use App::cloudconvert;
 
 ## Parse options
 my %opt;
@@ -21,7 +20,7 @@ pod2usage(-verbose => 2)  if ($opt{man});
 ## Read configuration
 my $configfile = $opt{config} || 'cloudconvert.json';
 if (-e $configfile) {
-    my $config = from_json(do {local (@ARGV, $/) = $configfile; <>});
+    my $config = decode_json(do {local (@ARGV, $/) = $configfile; <>});
     foreach (keys %$config) {
         $opt{$_} = $config->{$_} unless exists $opt{$_}
     }
@@ -50,56 +49,9 @@ pod2usage("missing input format") unless $opt{from};
 pod2usage("missing output format") unless $opt{to};
 pod2usage("missing output file") unless defined $output;
 
-## run
-exit convert(\%opt, $input, $output);
+my $app = App::cloudconvert->new(%opt);
+exit $app->convert( $input, $output );
 
-sub convert {
-    my ($opt, $inputfile, $outputfile) = @_;
-
-    my $ua = LWP::UserAgent->new( 
-        timeout => $opt{wait},
-        $opt{agent} ? (agent => $opt{agent}) : (),
-    ); # TODO: check SSL ?
-
-    my %params = (
-        inputformat => $opt{from},
-        outputformat => $opt{to},
-        apikey => $opt{apikey},
-        input => "upload",
-        download => "inline",
-        file => [ $inputfile ]
-    );
-
-    if ($opt{dry}) {
-        foreach (keys %params) {
-            print "$_: ".(ref $params{$_} ? $params{$_}->[0] : $params{$_}) . "\n"
-        }
-        print "inputfile: $inputfile\n";
-        print "outputfile: $outputfile\n";
-        return 0;
-    }
-
-    my $response = $ua->request(POST $opt{url},
-        Content_Type => 'multipart/form-data',
-        Content => \%params
-    );
-    
-    if ($response->code == '303') {
-        $response = $ua->mirror( $response->header('location'), $outputfile );
-    } else { 
-        my $error = "conversion failed";
-        if (!$response->is_success) {
-            if ($response->header('content-type') eq 'application/json') {
-                my $content = from_json($response->decoded_content);
-                $error = $content->{error};
-            }
-        }
-        say STDERR $response->code, ": ", $error;
-        return 1;
-    }
-
-    return 0;
-}
 
 __END__
 
@@ -160,12 +112,8 @@ User agent to identify with
 
 See L<https://cloudconvert.org/>
 
-=head1 AUTHOR
+=head1 SEE ALSO
 
-Jakob Voss E<lt>jakob.voss@gbv.deE<gt>
-
-=head1 LICENSE
-
-Public Domain
+See L<App::cloudconvert> for internals
 
 =cut

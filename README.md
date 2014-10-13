@@ -1,0 +1,26 @@
+# NAME
+
+App::cloudconvert - Convert files via cloudconvert.org
+
+# SYNOPSIS
+
+    use App::cloudconvert;
+    my $app = App::cloudconvert->new( from => "gif", to => "png" );
+    $app->convert( "sample.gif", "sample.png" );
+
+# DESCRIPTION
+
+See the command line client [cloudconvert](https://metacpan.org/pod/cloudconvert) for usage.
+
+# AUTHOR
+
+Jakob Voß <jakob.voss@gbv.de>
+
+# COPYRIGHT
+
+Copyright 2014- Jakob Voß
+
+# LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
